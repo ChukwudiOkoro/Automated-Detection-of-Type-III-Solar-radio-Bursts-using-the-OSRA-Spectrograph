@@ -44,7 +44,7 @@ def read_osra(fname):
     f_fits : 1D array of frequencies (MHz) for all 1024 channels
     """
 
-    # ── Define frequency arrays for all four OSRA antennas ───────────────────
+    #  Define frequency arrays for all four OSRA antennas ───────────────────
     # Each antenna covers a different frequency band.
     # The formula reconstructs the linear frequency axis from channel index.
     f1 = 800.0 - np.array(range(256)) * 400. / 256.   # 800  → 400  MHz
@@ -53,7 +53,7 @@ def read_osra(fname):
     f4 = 100.0 - np.array(range(256)) * 60.  / 255.   # 100  →  40  MHz
     f_fits = np.concatenate((f1, f2, f3, f4))          # 1024 channels total
 
-    # ── Determine number of records from file size ────────────────────────────
+    #  Determine number of records from file size 
     # Each record is exactly 1040 bytes.
     # +0.5 before int() rounds to nearest integer instead of truncating.
     file_stats = os.stat(fname)
@@ -62,11 +62,11 @@ def read_osra(fname):
     print(file_stats.st_size / 1040)           # fractional record count (diagnostic)
     a1 = int(file_stats.st_size / 1040 + 0.5) # integer record count
 
-    # ── Allocate output arrays ────────────────────────────────────────────────
+    #  Allocate output arrays ────────────────────────────────────────────────
     t_fits = np.zeros(a1, dtype=object)          # will hold datetime objects
     dyspec = np.zeros((a1, 1024), dtype=np.ubyte)
 
-    # ── Read records one by one ───────────────────────────────────────────────
+    # Read records one by one ───────────────────────────────────────────────
     file = open(fname, "rb")
     for i in range(a1):
         data_chunk    = file.read(1040)
@@ -104,7 +104,8 @@ def read_osra(fname):
     return (dyspec, t_fits, f_fits)
 
 
-def read_osraf2(fname):
+def read_osraf2(fname): 
+    #after seen the nature of the sample day four antenna image, i decided f2 antenna         #range may  have the best or less interference from other source on the ground
     """
     Read a single-antenna (f2 band only) OSRA .roh binary file.
 
@@ -123,15 +124,15 @@ def read_osraf2(fname):
     f_fits : 1D array of 256 frequencies (MHz) for the f2 band
     """
 
-    # ── f2 frequency axis: 400 MHz → 200 MHz over 256 channels ───────────────
+    #  f2 frequency axis: 400 MHz → 200 MHz over 256 channels ───────────────
     f2     = 400.0 - np.array(range(256)) * 200. / 255.
     f_fits = f2
 
-    # ── Determine number of records from file size ────────────────────────────
+    #  Determine number of records from file size ────────────────────────────
     file_stats = os.stat(fname)
     a1 = int(file_stats.st_size / 1040 + 0.5)
 
-    # ── Initialise t_fits with a dummy placeholder ────────────────────────────
+    #  Initialise t_fits with a dummy placeholder ────────────────────────────
     # The array is filled with real timestamps in the loop below.
     # The dummy value is overwritten for every record — it is only here to
     # pre-allocate the array with the correct length before the loop starts.
@@ -141,10 +142,10 @@ def read_osraf2(fname):
     # ALTERNATIVE: allocate as an object array of None and fill with datetimes:
     # t_fits = np.empty(a1, dtype=object)
 
-    # ── Allocate spectrogram array for f2 only (256 channels) ─────────────────
+    #  Allocate spectrogram array for f2 only (256 channels) ─────────────────
     dyspec = np.zeros((a1, 256), dtype=np.ubyte)
 
-    # ── Read records one by one ───────────────────────────────────────────────
+    # Read records one by one ───────────────────────────────────────────────
     file = open(fname, "rb")
     for i in range(a1):
         data_chunk    = file.read(1040)
@@ -300,7 +301,7 @@ def preproc2(dyspec, gauss_sigma=(1.5, 0), background_normalize=True):
 
     if background_normalize:
 
-        # ── Step 1a: sort all time rows at each channel, pick quiet rows ──────
+        #  Step 1a: sort all time rows at each channel, pick quiet rows 
         # Rows 10%–30% of the sorted stack are the quietest time samples.
         # Taking their mean gives one background value per frequency channel.
         n_times    = dyspec.shape[0]
@@ -311,7 +312,7 @@ def preproc2(dyspec, gauss_sigma=(1.5, 0), background_normalize=True):
         quiet_rows               = sorted_in_time[row_low:row_high, :]
         background_per_channel   = np.nanmean(quiet_rows, axis=0)
 
-        # ── Step 1b: protect against zero or NaN background ───────────────────
+        #  Step 1b: protect against zero or NaN background 
         # A dead channel has background = 0; dividing by it gives inf.
         # Replace those values with NaN so the division yields NaN instead,
         # which is then replaced by 0 in the next step.
@@ -321,7 +322,7 @@ def preproc2(dyspec, gauss_sigma=(1.5, 0), background_normalize=True):
             background_per_channel
         )
 
-        # ── Step 1c: normalise and remove background ──────────────────────────
+        #  Step 1c: normalise and remove background ──────────────────────────
         # (signal / background) - 1  →  quiet times ≈ 0, bursts > 0
         data_background_removed = (dyspec / background_per_channel) - 1
 
@@ -332,7 +333,7 @@ def preproc2(dyspec, gauss_sigma=(1.5, 0), background_normalize=True):
         # No background removal — pass the raw array straight through
         data_background_removed = dyspec
 
-    # ── Step 2: Gaussian smoothing along the time axis ────────────────────────
+    #  Step 2: Gaussian smoothing along the time axis ────────────────────────
     # sigma is a tuple matching the array axes (time, frequency).
     # order=0     : plain Gaussian (not a derivative)
     # mode=nearest: edge pixels are extended by repeating the border value
@@ -536,14 +537,14 @@ def line_grouping(lines, min_dist=3):
         real burst candidates by get_info_from_linegroupt_fits_cutout.
     """
 
-    # ── Guard: return immediately if no lines were detected ───────────────────
+    #  Guard: return immediately if no lines were detected ───────────────────
     if len(lines) == 0:
         return []
 
-    # ── Sort by the y-coordinate (time index) of each line's first endpoint ──
+    #  Sort by the y-coordinate (time index) of each line's first endpoint ──
     lines_sorted = sorted(lines, key=lambda line: line[0][1])
 
-    # ── Build groups iteratively ───────────────────────────────────────────────
+    #  Build groups iteratively ───────────────────────────────────────────────
     # Seed with the first line in its own group.
     line_groups = [[lines_sorted[0]]]
 
@@ -600,7 +601,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     f_model_arr      : model frequency array from the last successfully fitted burst
     """
 
-    # ── Build index arrays for interpolation ─────────────────────────────────
+    #  Build index arrays for interpolation ─────────────────────────────────
     # interp1d maps pixel row/column indices → real time/frequency values.
     t_idx_arr = np.arange(0, t_fits_cutout.shape[0])
     f_idx_arr = np.arange(0, f_fits.shape[0])
@@ -620,7 +621,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     t_interf = interpolate.interp1d(t_idx_arr, t_fits_cutout_num)  # → seconds
     f_interf = interpolate.interp1d(f_idx_arr, f_fits)              # → MHz
 
-    # ── Initialise output lists ───────────────────────────────────────────────
+    #  Initialise output lists ───────────────────────────────────────────────
     v_beam          = []
     f_range_burst   = []
     t_range_burst   = []
@@ -632,7 +633,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     t_model_arr     = []
     f_model_arr     = []
 
-    # ── Process each burst group ──────────────────────────────────────────────
+    #  Process each burst group ──────────────────────────────────────────────
     for lines in line_sets:
 
         # Skip single-line groups — not enough points to define a drift track
@@ -655,7 +656,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
             t_set_arr = t_interf(x_set)   # seconds since window start
             f_set_arr = f_interf(y_set)   # MHz
 
-            # ── Fit the Type III drift model ──────────────────────────────────
+            #  Fit the Type III drift model ──────────────────────────────────
             # rt.freq_drift_f_t(t, v, t0) models the frequency as a function
             # of time for a beam travelling at speed v (fraction of c).
             # Initial guess: v=0.1c, t0 slightly before the earliest point.
@@ -666,7 +667,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
                 method="lm"
             )
 
-            # ── Build the fitted model curve (50 points) ──────────────────────
+            #  Build the fitted model curve (50 points) ──────────────────────
             t_model_arr = np.linspace(
                 rt.freq_drift_t_f(np.min(f_set_arr), *popt),
                 rt.freq_drift_t_f(np.max(f_set_arr), *popt),
@@ -680,7 +681,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
                 for s in t_model_arr
             ])
 
-            # ── Store results ─────────────────────────────────────────────────
+            # Store results ─────────────────────────────────────────────────
             model_curve_set.append([t_model_arr, f_model_arr])
 
             # Start and end times of the burst as datetime objects
@@ -774,7 +775,7 @@ def get_info_from_linegroup(line_sets, t_fits, f_fits):
             model_curve_set.append([t_model_arr, f_model_arr])
             t_range_burst.append([
                 rt.freq_drift_t_f(np.min(f_set_arr), *popt)[0] / (24*3600) +                           np.min(t_fits),
-                rt.freq_drift_t_f(np.max(f_set_arr), *popt)[0] / (24*3600) + np.min(t_fits)
+                rt.freq_drift_t_f(np.max(f_set_arr), *popt)[0] / (24*3600) +                         np.min(t_fits)
             ])
             f_range_burst.append([np.min(f_set_arr), np.max(f_set_arr)])
             v_beam.append(popt[0])
@@ -792,90 +793,50 @@ def append_daily_csv(hourly_results, date,
     """
     Append one day's detection results as a SINGLE ROW to that year's CSV.
 
-    WHY ONE ROW PER DAY?
-    --------------------
-    The previous layout wrote 24 rows per day (one per hour) plus a TOTAL
-    row, making the file 25x longer than necessary and requiring a groupby
-    to recover any day-level statistic.  The new layout stores every piece
-    of information for one day in one row:
+    CSV layout — one row per day, 75 value columns:
+        date | total_bursts | total_raw_groups | total_samples
+             | bursts_h00 … bursts_h23   (24 columns)
+             | raw_h00    … raw_h23      (24 columns)
+             | samples_h00 … samples_h23 (24 columns)
 
-        date  | total_bursts | total_raw_groups | total_samples
-              | bursts_h00 ... bursts_h23        (24 columns)
-              | raw_h00    ... raw_h23            (24 columns)
-              | samples_h00 ... samples_h23       (24 columns)
+    File naming:
+        outputs/solar_cycle/bursts_YYYY.csv
 
-    Benefits of this layout
-    -----------------------
-    - One row per day — easy to read in a spreadsheet or with pd.read_csv()
-      without any aggregation step.
-    - Time-series analysis across the solar cycle just needs 'total_bursts' —
-      no groupby required.
-    - Hourly breakdown is still accessible: df['bursts_h06'] gives the
-      06:00-07:00 count for every day in the file.
-    - Vectorised pandas/numpy operations work naturally.
-
-    HOW TO UPGRADE EXISTING LONG-FORMAT FILES
-    ------------------------------------------
-    If you already have a file in the old 25-row-per-day format, call
-    the helper convert_long_to_wide_csv() once — it rewrites the file
-    in the new layout without losing any data and backs up the original.
-
-    Column naming convention
-    ------------------------
-    bursts_h00  ... bursts_h23   — confirmed burst count for each UTC hour
-    raw_h00     ... raw_h23      — raw group count for each UTC hour
-    samples_h00 ... samples_h23  — number of time records for each UTC hour
-
-    File naming (unchanged from the previous version)
-    --------------------------------------------------
-    outputs/solar_cycle/bursts_YYYY.csv
-    e.g. bursts_2003.csv, bursts_2004.csv ... bursts_2014.csv
-
-    Duplicate-date guard
-    --------------------
-    If `date` already exists in the file (e.g. the notebook was re-run)
-    the existing row is REPLACED rather than duplicated.  This makes the
-    function idempotent — safe to call more than once for the same day.
+    Duplicate-date guard:
+        If `date` already exists in the file the row is replaced,
+        not duplicated — safe to re-run the notebook for the same day.
 
     Parameters
     ----------
-    hourly_results : list of 24 dicts, indexed 0-23
+    hourly_results : list of 24 dicts, indexed 0–23
         Each dict must contain:
-            'hour'       : int  0-23
+            'hour'       : int  0–23
             'bursts'     : int  confirmed burst count
-            'raw_groups' : int  total line groups (including single-line)
+            'raw_groups' : int  total line groups
             'samples'    : int  number of time samples in that hour
-        Night or gap hours should already be set to 0 by the caller.
+        Night / gap hours should already be set to 0 by the caller.
 
-    date : str
-        ISO date string, e.g. "2003-10-27".  Year is extracted from it
-        to select the correct yearly output file.
-
-    output_dir : str
-        Directory for yearly CSV files.  Created if it does not exist.
+    date : str   ISO date string, e.g. "2003-10-27".
+    output_dir : str  Created automatically if it does not exist.
 
     Returns
     -------
-    str : absolute path of the yearly CSV file that was written to.
+    str : path of the yearly CSV file that was written to.
     """
 
-    # ── Validate input length ─────────────────────────────────────────────────
-    # The caller (hour loop) must have produced exactly 24 entries.
-    # Catching this here gives a clear error message instead of a silent
-    # misalignment between column names and values.
+    # ── Validate: the hour loop must have produced exactly 24 entries ─────────
     if len(hourly_results) != 24:
         raise ValueError(
             f"append_daily_csv expected 24 hourly results, got {len(hourly_results)}. "
-            "Make sure every branch of the hour loop calls hourly_results.append()."
+            "Ensure every branch of the hour loop calls hourly_results.append()."
         )
 
-    # ── Sort entries by hour so columns are always in 00->23 order ───────────
-    # Sorting is a safety measure in case the caller's loop ran out of order.
+    # ── Sort by hour so columns are always in 00→23 order ────────────────────
     entries = sorted(hourly_results, key=lambda e: e["hour"])
 
     # ── Build the 72 hourly value columns ────────────────────────────────────
-    # Three groups of 24: bursts, raw_groups, samples.
-    # Zero-padded hour tags (h00 ... h23) keep columns in sort order.
+     # Three groups of 24: bursts, raw_groups, samples.
+    # Zero-padded hour tags (h00 ... h23) keep columns in sort order
     burst_cols  = {f"bursts_h{h:02d}":  entries[h]["bursts"]     for h in range(24)}
     raw_cols    = {f"raw_h{h:02d}":     entries[h]["raw_groups"] for h in range(24)}
     sample_cols = {f"samples_h{h:02d}": entries[h]["samples"]    for h in range(24)}
@@ -885,51 +846,146 @@ def append_daily_csv(hourly_results, date,
     total_raw     = sum(e["raw_groups"] for e in entries)
     total_samples = sum(e["samples"]    for e in entries)
 
-    # ── Assemble the single row as a dict ─────────────────────────────────────
+    # ── Assemble the single row as a dict───────────────────────────────────────────────
     # Column order: date | totals | hourly bursts | hourly raw | hourly samples
+
     row = {
         "date"             : date,
         "total_bursts"     : total_bursts,
         "total_raw_groups" : total_raw,
         "total_samples"    : total_samples,
-        **burst_cols,    # bursts_h00 ... bursts_h23
-        **raw_cols,      # raw_h00    ... raw_h23
-        **sample_cols,   # samples_h00 ... samples_h23
+        **burst_cols,
+        **raw_cols,
+        **sample_cols,
     }
 
-    new_row_df = pd.DataFrame([row])   # single-row DataFrame
+    new_row_df = pd.DataFrame([row])
 
-    # ── Select the correct yearly file ────────────────────────────────────────
-    year     = date.split("-")[0]                         # e.g. "2003"
-    filename = f"bursts_{year}.csv"
-    filepath = os.path.join(output_dir, filename)
-
+    # Select the correct yearly file ─────────────────────────────────────
+    year     = date.split("-")[0]
+    filepath = os.path.join(output_dir, f"bursts_{year}.csv")
     os.makedirs(output_dir, exist_ok=True)
 
     # ── Write or update ───────────────────────────────────────────────────────
     if not os.path.exists(filepath):
-        # Brand-new file — write with header.
         new_row_df.to_csv(filepath, mode="w", header=True, index=False)
         action = "created"
 
     else:
-        # File already exists — load it and check for a duplicate date.
         existing_df = pd.read_csv(filepath, dtype={"date": str})
 
         if date in existing_df["date"].values:
-            # Replace the existing row for this date (idempotent re-run).
             existing_df = existing_df[existing_df["date"] != date]
             updated_df  = pd.concat([existing_df, new_row_df], ignore_index=True)
             updated_df.sort_values("date", inplace=True)
             updated_df.to_csv(filepath, mode="w", header=True, index=False)
             action = "replaced"
         else:
-            # New date — append a single row, no header needed.
+              # Brand-new file — write with header.
             new_row_df.to_csv(filepath, mode="a", header=False, index=False)
             action = "appended"
 
     print(
-        f"  [{date}] {action} -> {filepath}  "
+        f"  [{date}] {action} → {filepath}  "
+        f"(total bursts={total_bursts}, "
+        f"raw_groups={total_raw}, "
+        f"samples={total_samples})"
+    )
+
+    return filepathdef append_daily_csv(hourly_results, date,
+                     output_dir="outputs/solar_cycle"):
+    """
+    Append one day's detection results as a SINGLE ROW to that year's CSV.
+
+    CSV layout — one row per day, 75 value columns:
+        date | total_bursts | total_raw_groups | total_samples
+             | bursts_h00 … bursts_h23   (24 columns)
+             | raw_h00    … raw_h23      (24 columns)
+             | samples_h00 … samples_h23 (24 columns)
+
+    File naming:
+        outputs/solar_cycle/bursts_YYYY.csv
+
+    Duplicate-date guard:
+        If `date` already exists in the file the row is replaced,
+        not duplicated — safe to re-run the notebook for the same day.
+
+    Parameters
+    ----------
+    hourly_results : list of 24 dicts, indexed 0–23
+        Each dict must contain:
+            'hour'       : int  0–23
+            'bursts'     : int  confirmed burst count
+            'raw_groups' : int  total line groups
+            'samples'    : int  number of time samples in that hour
+        Night / gap hours should already be set to 0 by the caller.
+
+    date : str   ISO date string, e.g. "2003-10-27".
+    output_dir : str  Created automatically if it does not exist.
+
+    Returns
+    -------
+    str : path of the yearly CSV file that was written to.
+    """
+
+    # ── Validate: the hour loop must have produced exactly 24 entries ─────────
+    if len(hourly_results) != 24:
+        raise ValueError(
+            f"append_daily_csv expected 24 hourly results, got {len(hourly_results)}. "
+            "Ensure every branch of the hour loop calls hourly_results.append()."
+        )
+
+    # ── Sort by hour so columns are always in 00→23 order ────────────────────
+    entries = sorted(hourly_results, key=lambda e: e["hour"])
+
+    # ── Build the 72 hourly value columns ────────────────────────────────────
+    burst_cols  = {f"bursts_h{h:02d}":  entries[h]["bursts"]     for h in range(24)}
+    raw_cols    = {f"raw_h{h:02d}":     entries[h]["raw_groups"] for h in range(24)}
+    sample_cols = {f"samples_h{h:02d}": entries[h]["samples"]    for h in range(24)}
+
+    # ── Compute daily totals ──────────────────────────────────────────────────
+    total_bursts  = sum(e["bursts"]     for e in entries)
+    total_raw     = sum(e["raw_groups"] for e in entries)
+    total_samples = sum(e["samples"]    for e in entries)
+
+    # ── Assemble the single row ───────────────────────────────────────────────
+    row = {
+        "date"             : date,
+        "total_bursts"     : total_bursts,
+        "total_raw_groups" : total_raw,
+        "total_samples"    : total_samples,
+        **burst_cols,
+        **raw_cols,
+        **sample_cols,
+    }
+
+    new_row_df = pd.DataFrame([row])
+
+    # ── Route to the correct yearly file ─────────────────────────────────────
+    year     = date.split("-")[0]
+    filepath = os.path.join(output_dir, f"bursts_{year}.csv")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # ── Write or update ───────────────────────────────────────────────────────
+    if not os.path.exists(filepath):
+        new_row_df.to_csv(filepath, mode="w", header=True, index=False)
+        action = "created"
+
+    else:
+        existing_df = pd.read_csv(filepath, dtype={"date": str})
+
+        if date in existing_df["date"].values:
+            existing_df = existing_df[existing_df["date"] != date]
+            updated_df  = pd.concat([existing_df, new_row_df], ignore_index=True)
+            updated_df.sort_values("date", inplace=True)
+            updated_df.to_csv(filepath, mode="w", header=True, index=False)
+            action = "replaced"
+        else:
+            new_row_df.to_csv(filepath, mode="a", header=False, index=False)
+            action = "appended"
+
+    print(
+        f"  [{date}] {action} → {filepath}  "
         f"(total bursts={total_bursts}, "
         f"raw_groups={total_raw}, "
         f"samples={total_samples})"
@@ -937,9 +993,8 @@ def append_daily_csv(hourly_results, date,
 
     return filepath
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Helper: build the whole-solar-cycle summary CSV
+#  Build the whole-solar-cycle summary CSV
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
@@ -1007,7 +1062,7 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
 
     cycle_path = os.path.join(output_dir, cycle_filename)
 
-    # ── Discover yearly files ─────────────────────────────────────────────────
+    #  Discover yearly files ─────────────────────────────────────────────────
     if years is not None:
         # Caller specified which years to include.
         yearly_files = [
@@ -1031,7 +1086,7 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
               "Run append_daily_csv first.")
         return None
 
-    # ── Load and concatenate all yearly DataFrames ────────────────────────────
+    # Load and concatenate all yearly DataFrames ────────────────────────────
     frames = []
     for fp in yearly_files:
         try:
@@ -1047,17 +1102,17 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
 
     df_cycle = pd.concat(frames, ignore_index=True)
 
-    # ── Add a 'year' column immediately after 'date' ───────────────────────────
+    #  Add a 'year' column immediately after 'date' ───────────────────────────
     # This makes year-level groupby trivial without parsing date strings.
     df_cycle.insert(1, "year", df_cycle["date"].str[:4].astype(int))
 
-    # ── Sort chronologically and drop exact duplicate dates ───────────────────
+    #  Sort chronologically and drop exact duplicate dates ───────────────────
     # Duplicates can appear if a year file was accidentally written twice.
     df_cycle.sort_values("date", inplace=True)
     df_cycle.drop_duplicates(subset="date", keep="last", inplace=True)
     df_cycle.reset_index(drop=True, inplace=True)
 
-    # ── Write the cycle file ──────────────────────────────────────────────────
+    #  Write the cycle file ──────────────────────────────────────────────────
     df_cycle.to_csv(cycle_path, index=False)
 
     print(
@@ -1070,82 +1125,7 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
     return cycle_path
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Migration helper: convert old long-format files to the new wide format
-# ─────────────────────────────────────────────────────────────────────────────
 
-def convert_long_to_wide_csv(filepath, output_dir=None):
-    """
-    One-time migration: convert a legacy long-format CSV to the new wide format.
-
-    The old format had 25 rows per day (24 hourly + 1 TOTAL row).
-    The new format has 1 row per day with 75 columns.
-
-    The original file is backed up to <name>_legacy.csv before the
-    converted version is written in its place.  Nothing is deleted.
-
-    Parameters
-    ----------
-    filepath   : str  Path to the old-format CSV (e.g. "outputs/.../bursts_2003.csv")
-    output_dir : str  Where to write the converted file.  Defaults to the
-                      same directory as the input file.
-
-    Returns
-    -------
-    str : path of the new wide-format CSV.
-    """
-    import shutil
-
-    df_old = pd.read_csv(filepath, dtype={"date": str, "hour": str})
-
-    # ── Check this is actually a long-format file ─────────────────────────────
-    if "hour" not in df_old.columns:
-        print(f"  {filepath} does not look like a legacy long-format file — skipping.")
-        return filepath
-
-    # ── Keep only the 24 hourly rows; drop TOTAL rows ─────────────────────────
-    df_hourly = df_old[df_old["hour"] != "TOTAL"].copy()
-    df_hourly["hour_int"] = df_hourly["hour"].str[:2].astype(int)
-
-    wide_rows = []
-    for date, group in df_hourly.groupby("date"):
-        group     = group.sort_values("hour_int")
-        hour_data = {row["hour_int"]: row for _, row in group.iterrows()}
-
-        # Fill missing hours with zeros so every day has exactly 24 entries
-        entries = []
-        for h in range(24):
-            if h in hour_data:
-                entries.append(hour_data[h])
-            else:
-                entries.append({"bursts": 0, "raw_groups": 0, "samples": 0})
-
-        burst_cols  = {f"bursts_h{h:02d}":  entries[h]["bursts"]     for h in range(24)}
-        raw_cols    = {f"raw_h{h:02d}":     entries[h]["raw_groups"] for h in range(24)}
-        sample_cols = {f"samples_h{h:02d}": entries[h]["samples"]    for h in range(24)}
-
-        wide_rows.append({
-            "date"             : date,
-            "total_bursts"     : sum(e["bursts"]     for e in entries),
-            "total_raw_groups" : sum(e["raw_groups"] for e in entries),
-            "total_samples"    : sum(e["samples"]    for e in entries),
-            **burst_cols, **raw_cols, **sample_cols,
-        })
-
-    df_wide = pd.DataFrame(wide_rows).sort_values("date").reset_index(drop=True)
-
-    # ── Back up the original file ─────────────────────────────────────────────
-    backup_path = filepath.replace(".csv", "_legacy.csv")
-    shutil.copy2(filepath, backup_path)
-    print(f"  Original backed up -> {backup_path}")
-
-    # ── Write the new wide-format file ────────────────────────────────────────
-    out_dir  = output_dir or os.path.dirname(filepath)
-    out_path = os.path.join(out_dir, os.path.basename(filepath))
-    df_wide.to_csv(out_path, index=False)
-    print(f"  Wide-format written -> {out_path}  ({len(df_wide)} days)")
-
-    return out_path
 
 
 def append_into_json(old_json, v_beam, f_range_burst, t_range_burst):
