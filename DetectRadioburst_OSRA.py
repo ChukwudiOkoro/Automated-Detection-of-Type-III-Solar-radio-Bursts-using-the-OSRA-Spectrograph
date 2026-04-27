@@ -22,8 +22,63 @@ except:
     pass
 
 from skimage.transform import probabilistic_hough_line
-import Radiotools as rt        
+    
+def to_python_datetime(arr):
+     
+    """
+    Convert an array of timestamps to plain Python datetime objects.
 
+    Handles two input types:
+      - Already Python datetime objects : returned unchanged.
+      - numpy datetime64 or similar     : converted via datetime64[ms].
+
+    This conversion is needed because scipy interpolate.interp1d and
+    matplotlib both require either numeric values or plain Python datetimes —
+    numpy datetime64 objects cause type errors in those contexts.
+
+    Parameters
+    ----------
+    arr : array-like
+        Array of timestamps in any datetime-compatible format.
+
+    Returns
+    -------
+    numpy array of Python datetime.datetime objects.
+    """
+    arr = np.array(arr)
+    
+    # Return early if empty to avoid indexing errors (e.g., arr[0])
+    if len(arr) == 0:
+        return arr
+
+    # If the first element is already a Python datetime, the whole array is —
+    # return it as-is without any conversion.
+    if isinstance(arr[0], datetime.datetime):
+        return arr
+
+    # Otherwise convert: numpy datetime64 → millisecond precision → Python datetime
+    return np.array(arr).astype('datetime64[ms]').astype(datetime.datetime)
+
+def get_extent(t_array, f_array):
+    """
+    Convert datetime array to matplotlib extent.
+    
+    Parameters
+    ----------
+    t_array : array of datetime64 or Python datetime
+    f_array : array of frequencies (MHz)
+    
+    Returns
+    -------
+    list : [t_min, t_max, f_min, f_max] ready for matplotlib extent
+    """
+    t_datetime = to_python_datetime(t_array)
+    return [
+        mdates.date2num(t_datetime[0]),
+        mdates.date2num(t_datetime[-1]),
+        f_array[0],
+        f_array[-1]
+    ]
 
 def read_osra(fname):
     """
@@ -62,11 +117,11 @@ def read_osra(fname):
     print(file_stats.st_size / 1040)           # fractional record count (diagnostic)
     a1 = int(file_stats.st_size / 1040 + 0.5) # integer record count
 
-    #  Allocate output arrays ────────────────────────────────────────────────
+    #  Allocate output arrays 
     t_fits = np.zeros(a1, dtype=object)          # will hold datetime objects
     dyspec = np.zeros((a1, 1024), dtype=np.ubyte)
 
-    # Read records one by one ───────────────────────────────────────────────
+    # Read records one by one 
     file = open(fname, "rb")
     for i in range(a1):
         data_chunk    = file.read(1040)
@@ -76,9 +131,9 @@ def read_osra(fname):
         # High nibble (upper 4 bits) = tens digit: byte >> 4  = int(byte / 16)
         # Low  nibble (lower 4 bits) = units digit: byte & 0x0F = byte & 15
         year        = int(np_data_chunk[0] / 16) * 10 + (np_data_chunk[0] & 15)
-        year        = year + 1900 if year > 50 else year + 2000
+        year       = year + 1900 if year > 50 else year + 2000
         month       = int(np_data_chunk[1] / 16) * 10 + (np_data_chunk[1] & 15)
-        day         = int(np_data_chunk[2] / 16) * 10 + (np_data_chunk[2] & 15)
+        day        = int(np_data_chunk[2] / 16) * 10 + (np_data_chunk[2] & 15)
         hour        = int(np_data_chunk[3] / 16) * 10 + (np_data_chunk[3] & 15)
         minute      = int(np_data_chunk[4] / 16) * 10 + (np_data_chunk[4] & 15)
         second      = int(np_data_chunk[5] / 16) * 10 + (np_data_chunk[5] & 15)
@@ -86,7 +141,7 @@ def read_osra(fname):
 
         print(datetime.datetime(year, month, day, hour, minute, second, microsecond))
 
-        t_fits[i]  = datetime.datetime(year, month, day, hour, minute, second, microsecond)
+        t_fits[i] = datetime.datetime(year, month, day, hour, minute, second, microsecond)
         dyspec[i, :] = np_data_chunk[16:]   # spectral data starts at byte 16
 
     
@@ -100,6 +155,8 @@ def read_osra(fname):
     #     for i in range(a1):
     #         data_chunk = file.read(1040)
     #         ... (same decoding logic)
+    
+    t_fits = to_python_datetime(t_fits)
 
     return (dyspec, t_fits, f_fits)
 
@@ -142,10 +199,10 @@ def read_osraf2(fname):
     # ALTERNATIVE: allocate as an object array of None and fill with datetimes:
     # t_fits = np.empty(a1, dtype=object)
 
-    #  Allocate spectrogram array for f2 only (256 channels) ─────────────────
+    #  Allocate spectrogram array for f2 only (256 channels) 
     dyspec = np.zeros((a1, 256), dtype=np.ubyte)
 
-    # Read records one by one ───────────────────────────────────────────────
+    # Read records one by one ──────
     file = open(fname, "rb")
     for i in range(a1):
         data_chunk    = file.read(1040)
@@ -161,7 +218,7 @@ def read_osraf2(fname):
         second      = int(np_data_chunk[5] / 16) * 10 + (np_data_chunk[5] & 15)
         microsecond = 100000 * np_data_chunk[6]
 
-        t_fits[i]    = datetime.datetime(year, month, day, hour, minute, second,                   microsecond)
+        t_fits[i] = datetime.datetime(year, month, day, hour, minute, second,                     microsecond)
 
         # f2 spectral data occupies bytes 272–527 in each 1040-byte record.
         # bytes 0–15   : header (timestamp)
@@ -186,36 +243,8 @@ def read_osraf2(fname):
     return (dyspec, t_fits, f_fits)
 
 
-def to_python_datetime(arr):
-    """
-    Convert an array of timestamps to plain Python datetime objects.
 
-    Handles two input types:
-      - Already Python datetime objects : returned unchanged.
-      - numpy datetime64 or similar     : converted via datetime64[ms].
 
-    This conversion is needed because scipy interpolate.interp1d and
-    matplotlib both require either numeric values or plain Python datetimes —
-    numpy datetime64 objects cause type errors in those contexts.
-
-    Parameters
-    ----------
-    arr : array-like
-        Array of timestamps in any datetime-compatible format.
-
-    Returns
-    -------
-    numpy array of Python datetime.datetime objects.
-    """
-    arr = np.array(arr)
-
-    # If the first element is already a Python datetime, the whole array is —
-    # return it as-is without any conversion.
-    if isinstance(arr[0], datetime.datetime):
-        return arr
-
-    # Otherwise convert: numpy datetime64 → millisecond precision → Python datetime
-    return np.array(arr).astype('datetime64[ms]').astype(datetime.datetime)
 
 def idx_val_pos(f_fits, target):
     """
@@ -892,7 +921,9 @@ def append_daily_csv(hourly_results, date,
         f"samples={total_samples})"
     )
 
-    return filepathdef append_daily_csv(hourly_results, date,
+    return filepath
+
+def append_daily_csv(hourly_results, date,
                      output_dir="outputs/solar_cycle"):
     """
     Append one day's detection results as a SINGLE ROW to that year's CSV.
@@ -928,7 +959,7 @@ def append_daily_csv(hourly_results, date,
     str : path of the yearly CSV file that was written to.
     """
 
-    # ── Validate: the hour loop must have produced exactly 24 entries ─────────
+    # ── Validate: the hour loop must have produced exactly 24 entries 
     if len(hourly_results) != 24:
         raise ValueError(
             f"append_daily_csv expected 24 hourly results, got {len(hourly_results)}. "
