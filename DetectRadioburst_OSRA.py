@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.insert(1, './work1/okoro/type3detectosra/')  # use the repo type3detectosra
+sys.path.insert(1, '/work1/okoro/type3detectosra/')  #  type3detectosra
 
 import matplotlib.dates as mdates
 import datetime
@@ -146,7 +146,7 @@ def read_osra(fname):
         dyspec[i, :] = np_data_chunk[16:]   # spectral data starts at byte 16
 
     
-    # After the loop, we have read all records. Now we can close the file.
+      # After the loop, we have read all records. Now we can close the file.
     file.close()        # ← correct Python syntax
 
     # ALTERNATIVE: use a context manager to guarantee the file is closed
@@ -449,45 +449,39 @@ def binarization(data_smoothed, N_order=8, peak_r=0.9993):
 
     return binary_map
 
+
 def hough_detect(binary_map, dyspec,
                  threshold=30, line_gap=10, line_length=50,
-                 theta=np.linspace(np.pi/2 - np.pi/8,
-                                   np.pi/2 - 1/180*np.pi, 300)):
+                 theta=np.linspace(
+                     np.pi/2 - np.pi/4,        # start: 45°
+                     np.pi/2 - 0.5/180*np.pi,  # end  : ~89.5°
+                     500
+                 )):
     """
     Find near-vertical line features in the binary spectrogram map.
 
-    A Type III radio burst drifts from high to low frequency over time,
-    producing a near-vertical streak in the binary map (time on x-axis,
-    frequency on y-axis). The probabilistic Hough transform finds all
-    such streaks that meet the minimum length and support requirements.
+    Uses probabilistic_hough_line from scikit-image >= 0.19.
+    In this version the function has its own internal random number
+    generator controlled by the rng parameter — it does NOT read
+    np.random.seed(), which is why setting np.random.seed(42) before
+    the call had no effect on reproducibility.
+
+    The fix is to pass rng=42 directly into probabilistic_hough_line,
+    which seeds its internal generator and guarantees identical results
+    on every run regardless of any other random state in the program.
 
     Parameters
     ----------
-    binary_map : 2D array
-        Output of binarization() — 1 at candidate peak pixels, 0 elsewhere.
-    dyspec : 2D array
-        Raw spectrogram (passed for shape reference, not modified here).
-    threshold : int
-        Minimum number of pixels that must vote for a line.
-        Lower → more lines found including more noise.
-        Default 30 (tuned for OSRA f2 data).
-    line_gap : int
-        Maximum gap in pixels allowed within one line segment.
-        Bridges small breaks in a burst drift track.
-    line_length : int
-        Minimum length in pixels a line must span to be reported.
-    theta : 1D array (radians)
-        Orientations to search. Default spans 22.5° to ~0.5° off vertical,
-        covering realistic Type III drift slopes.
-        Exactly vertical (90°) is excluded because it would imply
-        an instantaneous (infinite) frequency drift — not physical.
+    binary_map  : 2D array — output of binarization()
+    dyspec      : 2D array — raw spectrogram (shape reference only)
+    threshold   : minimum pixel votes a line must accumulate
+    line_gap    : maximum gap in pixels allowed within one line segment
+    line_length : minimum span in pixels along the time axis
+    theta       : angles (radians) to search
 
     Returns
     -------
     lines : list of ((x0, y0), (x1, y1)) tuples
-        Each entry is one detected line segment defined by its two
-        endpoints in pixel coordinates
-        (x = time index, y = frequency channel index).
     """
 
     lines = probabilistic_hough_line(
@@ -495,11 +489,13 @@ def hough_detect(binary_map, dyspec,
         threshold=threshold,
         line_gap=line_gap,
         line_length=line_length,
-        theta=theta
-    )
+        theta=theta,
+        rng=42          # seeds the function's own internal RNG directly
+    )                   # np.random.seed() has no effect in skimage >= 0.19
 
     return lines
 
+    
 
 def point_to_line_distance(p1, p2, p3):
     """
@@ -734,6 +730,8 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
 
     return (v_beam, f_range_burst, t_range_burst, model_curve_set,
             t_set_arr_set, f_set_arr_set, t_model_arr, f_model_arr)
+
+    
     
 def get_info_from_linegroup(line_sets, t_fits, f_fits):
     """
@@ -804,8 +802,8 @@ def get_info_from_linegroup(line_sets, t_fits, f_fits):
 
             model_curve_set.append([t_model_arr, f_model_arr])
             t_range_burst.append([
-                rt.freq_drift_t_f(np.min(f_set_arr), *popt)[0] / (24*3600) +                           np.min(t_fits),
-                rt.freq_drift_t_f(np.max(f_set_arr), *popt)[0] / (24*3600) +                         np.min(t_fits)
+                rt.freq_drift_t_f(np.min(f_set_arr), *popt)[0] / (24*3600) + np.min(t_fits),
+                rt.freq_drift_t_f(np.max(f_set_arr), *popt)[0] / (24*3600) + np.min(t_fits)
             ])
             f_range_burst.append([np.min(f_set_arr), np.max(f_set_arr)])
             v_beam.append(popt[0])
@@ -864,19 +862,19 @@ def append_daily_csv(hourly_results, date,
     # ── Sort by hour so columns are always in 00→23 order ────────────────────
     entries = sorted(hourly_results, key=lambda e: e["hour"])
 
-    # ── Build the 72 hourly value columns ────────────────────────────────────
+    # .. Build the 72 hourly value columns ------------------------------------
      # Three groups of 24: bursts, raw_groups, samples.
     # Zero-padded hour tags (h00 ... h23) keep columns in sort order
     burst_cols  = {f"bursts_h{h:02d}":  entries[h]["bursts"]     for h in range(24)}
     raw_cols    = {f"raw_h{h:02d}":     entries[h]["raw_groups"] for h in range(24)}
     sample_cols = {f"samples_h{h:02d}": entries[h]["samples"]    for h in range(24)}
 
-    # ── Compute daily totals ──────────────────────────────────────────────────
+    # ── Compute daily totals --------------------------------------------------
     total_bursts  = sum(e["bursts"]     for e in entries)
     total_raw     = sum(e["raw_groups"] for e in entries)
     total_samples = sum(e["samples"]    for e in entries)
 
-    # ── Assemble the single row as a dict───────────────────────────────────────────────
+    # ── Assemble the single row as a dict......................................
     # Column order: date | totals | hourly bursts | hourly raw | hourly samples
 
     row = {
@@ -891,12 +889,12 @@ def append_daily_csv(hourly_results, date,
 
     new_row_df = pd.DataFrame([row])
 
-    # Select the correct yearly file ─────────────────────────────────────
+    # Select the correct yearly file ----------------------------------------
     year     = date.split("-")[0]
     filepath = os.path.join(output_dir, f"bursts_{year}.csv")
     os.makedirs(output_dir, exist_ok=True)
 
-    # ── Write or update ───────────────────────────────────────────────────────
+    # -- Write or update ---------------------------------------------------------
     if not os.path.exists(filepath):
         new_row_df.to_csv(filepath, mode="w", header=True, index=False)
         action = "created"
@@ -911,7 +909,7 @@ def append_daily_csv(hourly_results, date,
             updated_df.to_csv(filepath, mode="w", header=True, index=False)
             action = "replaced"
         else:
-              # Brand-new file — write with header.
+              # File exists, new date — append without header as a new row.
             new_row_df.to_csv(filepath, mode="a", header=False, index=False)
             action = "appended"
 
@@ -925,9 +923,9 @@ def append_daily_csv(hourly_results, date,
     return filepath
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 #  Build the whole-solar-cycle summary CSV
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
                           cycle_filename="bursts_solar_cycle.csv",
