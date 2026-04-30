@@ -1,0 +1,31 @@
+nohup: ignoring input
+[I 2026-04-30 05:49:02.390 ServerApp] jupyter_lsp | extension was successfully linked.
+[I 2026-04-30 05:49:02.392 ServerApp] jupyter_server_terminals | extension was successfully linked.
+[I 2026-04-30 05:49:02.394 ServerApp] jupyterlab | extension was successfully linked.
+[I 2026-04-30 05:49:02.397 ServerApp] notebook | extension was successfully linked.
+[I 2026-04-30 05:49:02.564 ServerApp] ipyparallel.nbextension | extension was found and enabled by notebook_shim. Consider moving the extension to Jupyter Server's extension paths.
+[I 2026-04-30 05:49:02.564 ServerApp] notebook_shim | extension was successfully linked.
+[I 2026-04-30 05:49:02.574 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2026-04-30 05:49:02.575 ServerApp] jupyter_lsp | extension was successfully loaded.
+[I 2026-04-30 05:49:02.575 ServerApp] jupyter_server_terminals | extension was successfully loaded.
+[I 2026-04-30 05:49:02.576 LabApp] JupyterLab extension loaded from /home/okoro/.local/lib/python3.11/site-packages/jupyterlab
+[I 2026-04-30 05:49:02.577 LabApp] JupyterLab application directory is /home/okoro/.local/share/jupyter/lab
+[I 2026-04-30 05:49:02.577 LabApp] Extension Manager is 'pypi'.
+[I 2026-04-30 05:49:02.599 ServerApp] jupyterlab | extension was successfully loaded.
+[I 2026-04-30 05:49:02.601 ServerApp] notebook | extension was successfully loaded.
+[I 2026-04-30 05:49:02.601 ServerApp] The port 8888 is already in use, trying another port.
+[I 2026-04-30 05:49:02.601 ServerApp] Serving notebooks from local directory: /work1/okoro/type3detectosra
+[I 2026-04-30 05:49:02.601 ServerApp] Jupyter Server 2.17.0 is running at:
+[I 2026-04-30 05:49:02.601 ServerApp] http://127.0.0.1:8889/tree?token=bdecd369b957347dd124841cd341cf9c881a6a9ccb477002
+[I 2026-04-30 05:49:02.601 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 2026-04-30 05:49:02.603 ServerApp] 
+    
+    To access the server, open this file in a browser:
+        file:///home/okoro/.local/share/jupyter/runtime/jpserver-2195-open.html
+    Or copy and paste one of these URLs:
+        http://127.0.0.1:8889/tree?token=bdecd369b957347dd124841cd341cf9c881a6a9ccb477002
+[I 2026-04-30 05:49:02.717 ServerApp] Skipped non-installed server(s): basedpyright, bash-language-server, dockerfile-language-server-nodejs, javascript-typescript-langserver, jedi-language-server, julia-language-server, pyrefly, pyright, python-language-server, python-lsp-server, r-languageserver, sql-language-server, texlab, typescript-language-server, unified-language-server, vscode-css-languageserve[I 2026-04-30 06:02:47.901 ServerApp] 302 GET /?token=[secret] (@127.0.0.1) 0.93ms
+[W 2026-04-30 06:02:47.939 ServerApp] Clearing invalid/expired login cookie username-localhost-8888
+[I 2026-04-30 06:02:47.941 JupyterNotebookApp] 302 GET /tree?token=[secret] (@127.0.0.1) 2.71ms
+[I 2026-04-30 06:04:28.179 ServerApp] 302 GET /?token=[secret] (@127.0.0.1) 0.94ms
+[I 2026-04-30 06:22:37.940 ServerApp] Creating new directory in 
