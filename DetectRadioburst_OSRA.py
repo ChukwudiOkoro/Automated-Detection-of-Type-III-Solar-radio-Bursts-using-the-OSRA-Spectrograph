@@ -1,3 +1,13 @@
+'''  
+   File name: DetectRadioburst_OSRA.py
+   Author:   Chukwudi Stephen Okoro
+   Research Group: AIP Solar Physic Group (Radio Astronomy)
+   Date:    29-04-2026
+
+
+   # Useful for type III burst detection
+
+'''
 import sys
 import os
 sys.path.insert(1, '/work1/okoro/type3detectosra/')  #  type3detectosra
@@ -219,7 +229,7 @@ def read_osraf2(fname):
         second      = int(np_data_chunk[5] / 16) * 10 + (np_data_chunk[5] & 15)
         microsecond = 100000 * np_data_chunk[6]
 
-        t_fits[i] = datetime.datetime(year, month, day, hour, minute, second,                     microsecond)
+        t_fits[i] = datetime.datetime(year, month, day, hour, minute, second, microsecond)
 
         # f2 spectral data occupies bytes 272–527 in each 1040-byte record.
         # bytes 0–15   : header (timestamp)
@@ -659,7 +669,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     t_model_arr     = []
     f_model_arr     = []
 
-    #  Process each burst group ──────────────────────────────────────────────
+    #  Process each burst group --------------------------------------------
     for lines in line_sets:
 
         # Skip single-line groups — not enough points to define a drift track
@@ -682,7 +692,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
             t_set_arr = t_interf(x_set)   # seconds since window start
             f_set_arr = f_interf(y_set)   # MHz
 
-            #  Fit the Type III drift model ──────────────────────────────────
+            #  Fit the Type III drift model --------------------------------
             # rt.freq_drift_f_t(t, v, t0) models the frequency as a function
             # of time for a beam travelling at speed v (fraction of c).
             # Initial guess: v=0.1c, t0 slightly before the earliest point.
@@ -693,7 +703,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
                 method="lm"
             )
 
-            #  Build the fitted model curve (50 points) ──────────────────────
+            #  Build the fitted model curve (50 points) ...................
             t_model_arr = np.linspace(
                 rt.freq_drift_t_f(np.min(f_set_arr), *popt),
                 rt.freq_drift_t_f(np.max(f_set_arr), *popt),
@@ -707,7 +717,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
                 for s in t_model_arr
             ])
 
-            # Store results ─────────────────────────────────────────────────
+            # Store results --------------------------------------
             model_curve_set.append([t_model_arr, f_model_arr])
 
             # Start and end times of the burst as datetime objects

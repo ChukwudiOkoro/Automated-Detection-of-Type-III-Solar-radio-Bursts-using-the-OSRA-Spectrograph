@@ -1,3 +1,22 @@
+'''
+   File name: DetectRadioburst_OSRA.py
+   Author:   Chukwudi Stephen Okoro
+   Research Group: AIP Solar Physic Group (Radio Astronomy),
+   Date:    29-04-2026
+
+
+   # Useful for type III burst detection
+   Note:
+   full resolution would  be 594606 time points, which is too large for our system matplolib to handle safely in due time.
+   to plot the image sample there is another version in the read_osra_f_fits.ipynb file that one can vary the timestamp as needed.
+   choosing 1/10 of the total value is recommended.
+
+
+'''
+   
+
+
+
 import sys
 sys.path.insert(1, '/work1/okoro/type3detectosra/') # make sure to use the code in this repo
 

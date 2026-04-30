@@ -1,3 +1,13 @@
+'''  
+   File name: DetectRadioburst_OSRA.py
+   Author:   Chukwudi Stephen Okoro
+   Research Group: AIP Solar Physic Group (Radio Astronomy)
+   Date:    29-04-2026
+
+
+   # Useful for type III burst detection
+
+'''
 import sys
 import os
 sys.path.insert(1, '/work1/okoro/type3detectosra/')  #  type3detectosra
@@ -219,7 +229,7 @@ def read_osraf2(fname):
         second      = int(np_data_chunk[5] / 16) * 10 + (np_data_chunk[5] & 15)
         microsecond = 100000 * np_data_chunk[6]
 
-        t_fits[i] = datetime.datetime(year, month, day, hour, minute, second,                     microsecond)
+        t_fits[i] = datetime.datetime(year, month, day, hour, minute, second, microsecond)
 
         # f2 spectral data occupies bytes 272–527 in each 1040-byte record.
         # bytes 0–15   : header (timestamp)
