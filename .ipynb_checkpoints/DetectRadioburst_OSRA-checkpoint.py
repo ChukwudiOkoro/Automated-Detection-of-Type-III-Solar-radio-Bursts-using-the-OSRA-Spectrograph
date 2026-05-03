@@ -1,7 +1,7 @@
 '''  
    File name: DetectRadioburst_OSRA.py
    Author:   Chukwudi Stephen Okoro
-   Research Group: AIP Solar Physic Group (Radio Astronomy)
+   Research Group: AIP Solar Physic  (Radio Astronomy)
    Date:    29-04-2026
 
 
@@ -110,7 +110,7 @@ def read_osra(fname):
     f_fits : 1D array of frequencies (MHz) for all 1024 channels
     """
 
-    #  Define frequency arrays for all four OSRA antennas ───────────────────
+    #  Define frequency arrays for all four OSRA antennas -------------------
     # Each antenna covers a different frequency band.
     # The formula reconstructs the linear frequency axis from channel index.
     f1 = 800.0 - np.array(range(256)) * 400. / 256.   # 800  → 400  MHz
@@ -192,15 +192,15 @@ def read_osraf2(fname):
     f_fits : 1D array of 256 frequencies (MHz) for the f2 band
     """
 
-    #  f2 frequency axis: 400 MHz → 200 MHz over 256 channels ───────────────
+    #  f2 frequency axis: 400 MHz → 200 MHz over 256 channels --------------------
     f2     = 400.0 - np.array(range(256)) * 200. / 255.
     f_fits = f2
 
-    #  Determine number of records from file size ────────────────────────────
+    #  Determine number of records from file size ..........................
     file_stats = os.stat(fname)
     a1 = int(file_stats.st_size / 1040 + 0.5)
 
-    #  Initialise t_fits with a dummy placeholder ────────────────────────────
+    #  Initialise t_fits with a dummy placeholder ----------------------------
     # The array is filled with real timestamps in the loop below.
     # The dummy value is overwritten for every record — it is only here to
     # pre-allocate the array with the correct length before the loop starts.
@@ -362,7 +362,7 @@ def preproc2(dyspec, gauss_sigma=(1.5, 0), background_normalize=True):
             background_per_channel
         )
 
-        #  Step 1c: normalise and remove background ──────────────────────────
+        #  Step 1c: normalise and remove background  ........................
         # (signal / background) - 1  →  quiet times ≈ 0, bursts > 0
         data_background_removed = (dyspec / background_per_channel) - 1
 
@@ -373,7 +373,7 @@ def preproc2(dyspec, gauss_sigma=(1.5, 0), background_normalize=True):
         # No background removal — pass the raw array straight through
         data_background_removed = dyspec
 
-    #  Step 2: Gaussian smoothing along the time axis ────────────────────────
+    #  Step 2: Gaussian smoothing along the time axis ..............................
     # sigma is a tuple matching the array axes (time, frequency).
     # order=0     : plain Gaussian (not a derivative)
     # mode=nearest: edge pixels are extended by repeating the border value
@@ -432,7 +432,7 @@ def binarization(data_smoothed, N_order=8, peak_r=0.9993):
     pad_size     = N_order
     array_padded = np.pad(data_smoothed, ((pad_size, pad_size), (0, 0)))
 
-    # ── Compare each pixel against neighbours at offsets 1 … N_order-1 ───────
+    #  Compare each pixel against neighbours at offsets 1 … N_order-1 -----
     # For offset step (0-based, actual offset = step + 1):
     #
     #   pixel row      : array_padded[pad + step     : -pad + step     , :]
@@ -573,14 +573,14 @@ def line_grouping(lines, min_dist=3):
         real burst candidates by get_info_from_linegroupt_fits_cutout.
     """
 
-    #  Guard: return immediately if no lines were detected ───────────────────
+    #  Guard: return immediately if no lines were detected ----------------------------.-----
     if len(lines) == 0:
         return []
 
     #  Sort by the y-coordinate (time index) of each line's first endpoint ──
     lines_sorted = sorted(lines, key=lambda line: line[0][1])
 
-    #  Build groups iteratively ───────────────────────────────────────────────
+    #  Build groups iteratively ------------------------------------------
     # Seed with the first line in its own group.
     line_groups = [[lines_sorted[0]]]
 
@@ -637,7 +637,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     f_model_arr      : model frequency array from the last successfully fitted burst
     """
 
-    #  Build index arrays for interpolation ─────────────────────────────────
+    #  Build index arrays for interpolation -----------------------------
     # interp1d maps pixel row/column indices → real time/frequency values.
     t_idx_arr = np.arange(0, t_fits_cutout.shape[0])
     f_idx_arr = np.arange(0, f_fits.shape[0])
@@ -657,7 +657,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     t_interf = interpolate.interp1d(t_idx_arr, t_fits_cutout_num)  # → seconds
     f_interf = interpolate.interp1d(f_idx_arr, f_fits)              # → MHz
 
-    #  Initialise output lists ───────────────────────────────────────────────
+    #  Initialise output lists ---------------------------------------------
     v_beam          = []
     f_range_burst   = []
     t_range_burst   = []
@@ -669,7 +669,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
     t_model_arr     = []
     f_model_arr     = []
 
-    #  Process each burst group ──────────────────────────────────────────────
+    #  Process each burst group --------------------------------------------
     for lines in line_sets:
 
         # Skip single-line groups — not enough points to define a drift track
@@ -692,7 +692,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
             t_set_arr = t_interf(x_set)   # seconds since window start
             f_set_arr = f_interf(y_set)   # MHz
 
-            #  Fit the Type III drift model ──────────────────────────────────
+            #  Fit the Type III drift model --------------------------------
             # rt.freq_drift_f_t(t, v, t0) models the frequency as a function
             # of time for a beam travelling at speed v (fraction of c).
             # Initial guess: v=0.1c, t0 slightly before the earliest point.
@@ -703,7 +703,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
                 method="lm"
             )
 
-            #  Build the fitted model curve (50 points) ──────────────────────
+            #  Build the fitted model curve (50 points) ...................
             t_model_arr = np.linspace(
                 rt.freq_drift_t_f(np.min(f_set_arr), *popt),
                 rt.freq_drift_t_f(np.max(f_set_arr), *popt),
@@ -717,7 +717,7 @@ def get_info_from_linegroupt_fits_cutout(line_sets, t_fits_cutout, f_fits):
                 for s in t_model_arr
             ])
 
-            # Store results ─────────────────────────────────────────────────
+            # Store results --------------------------------------
             model_curve_set.append([t_model_arr, f_model_arr])
 
             # Start and end times of the burst as datetime objects
@@ -862,14 +862,14 @@ def append_daily_csv(hourly_results, date,
     str : path of the yearly CSV file that was written to.
     """
 
-    # ── Validate: the hour loop must have produced exactly 24 entries ─────────
+    # Validate: the hour loop must have produced exactly 24 entries ---------------
     if len(hourly_results) != 24:
         raise ValueError(
             f"append_daily_csv expected 24 hourly results, got {len(hourly_results)}. "
             "Ensure every branch of the hour loop calls hourly_results.append()."
         )
 
-    # ── Sort by hour so columns are always in 00→23 order ────────────────────
+    #  Sort by hour so columns are always in 00→23 order -----------------
     entries = sorted(hourly_results, key=lambda e: e["hour"])
 
     # .. Build the 72 hourly value columns ------------------------------------
@@ -1002,7 +1002,7 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
 
     cycle_path = os.path.join(output_dir, cycle_filename)
 
-    #  Discover yearly files ─────────────────────────────────────────────────
+    #  Discover yearly files ......................................................
     if years is not None:
         # Caller specified which years to include.
         yearly_files = [
@@ -1026,7 +1026,7 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
               "Run append_daily_csv first.")
         return None
 
-    # Load and concatenate all yearly DataFrames ────────────────────────────
+    # Load and concatenate all yearly DataFrames ...........................
     frames = []
     for fp in yearly_files:
         try:
@@ -1042,17 +1042,17 @@ def build_solar_cycle_csv(output_dir="outputs/solar_cycle",
 
     df_cycle = pd.concat(frames, ignore_index=True)
 
-    #  Add a 'year' column immediately after 'date' ───────────────────────────
+    #  Add a 'year' column immediately after 'date' .......................
     # This makes year-level groupby trivial without parsing date strings.
     df_cycle.insert(1, "year", df_cycle["date"].str[:4].astype(int))
 
-    #  Sort chronologically and drop exact duplicate dates ───────────────────
+    #  Sort chronologically and drop exact duplicate dates ......................
     # Duplicates can appear if a year file was accidentally written twice.
     df_cycle.sort_values("date", inplace=True)
     df_cycle.drop_duplicates(subset="date", keep="last", inplace=True)
     df_cycle.reset_index(drop=True, inplace=True)
 
-    #  Write the cycle file ──────────────────────────────────────────────────
+    #  Write the cycle file ....................................................
     df_cycle.to_csv(cycle_path, index=False)
 
     print(
