@@ -1,0 +1,24 @@
+# Jupyter
+.ipynb_checkpoints/
+.local/share/jupyter/runtime/
+
+# Logs
+*.log
+*.out
+*.err
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# Large outputs/data
+outputs/
+*.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+
