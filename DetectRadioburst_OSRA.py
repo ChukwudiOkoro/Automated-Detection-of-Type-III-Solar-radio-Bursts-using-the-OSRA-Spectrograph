@@ -142,13 +142,14 @@ def read_osra(fname):
         # High nibble (upper 4 bits) = tens digit: byte >> 4  = int(byte / 16)
         # Low  nibble (lower 4 bits) = units digit: byte & 0x0F = byte & 15
         year = int(np_data_chunk[0] // 16) * 10 + int(np_data_chunk[0] & 15)
-        year       = year + 1900 if year > 50 else year + 2000
-        month       = int(np_data_chunk[1] / 16) * 10 + (np_data_chunk[1] & 15)
-        day        = int(np_data_chunk[2] / 16) * 10 + (np_data_chunk[2] & 15)
-        hour        = int(np_data_chunk[3] / 16) * 10 + (np_data_chunk[3] & 15)
-        minute      = int(np_data_chunk[4] / 16) * 10 + (np_data_chunk[4] & 15)
-        second      = int(np_data_chunk[5] / 16) * 10 + (np_data_chunk[5] & 15)
-        microsecond = 100000 * int(np_data_chunk[6])   # byte 6 is 100 ms units → microseconds
+         # NEW — explicit int() on evdata_ery nibble
+        year        = int(np_data_chunk[0] // 16) * 10 + int(np_data_chnk[0] & 15)
+        month       = int(np_data_chunk[1] // 16) * 10 + int(np_data_chunk[1] & 15)
+        day         = int(np_data_chunk[2] // 16) * 10 + int(np_data_chunk[2] & 15)
+        hour        = int(np_data_chunk[3] // 16) * 10 + int(np_data_chunk[3] & 15)
+        minute      = int(np_data_chunk[4] // 16) * 10 + int(np_data_chunk[4] & 15)
+        second      = int(np_data_chunk[5] // 16) * 10 + int(np_data_chunk[5] & 15)
+        microsecond = 100000 * int(np_data_chunk[6]) # byte 6 is 100 ms units → microseconds
 
         print(datetime.datetime(year, month, day, hour, minute, second, microsecond))
 
@@ -220,14 +221,14 @@ def read_osraf2(fname):
         np_data_chunk = np.frombuffer(data_chunk, dtype=np.uint8)
 
         # BCD timestamp decode — same method as read_osra
-        year = int(np_data_chunk[0] // 16) * 10 + int(np_data_chunk[0] & 15)
+        year        = int(np_data_chunk[0] // 16) * 10 + int(np_data_chunk[0] & 15)
         year        = year + 1900 if year > 50 else year + 2000
-        month       = int(np_data_chunk[1] / 16) * 10 + (np_data_chunk[1] & 15)
-        day         = int(np_data_chunk[2] / 16) * 10 + (np_data_chunk[2] & 15)
-        hour        = int(np_data_chunk[3] / 16) * 10 + (np_data_chunk[3] & 15)
-        minute      = int(np_data_chunk[4] / 16) * 10 + (np_data_chunk[4] & 15)
-        second      = int(np_data_chunk[5] / 16) * 10 + (np_data_chunk[5] & 15)
-        microsecond = 100000 * int(np_data_chunk[6])
+        month       = int(np_data_chunk[1] // 16) * 10 + int(np_data_chunk[1] & 15)
+        day         = int(np_data_chunk[2] // 16) * 10 + int(np_data_chunk[2] & 15)
+        hour        = int(np_data_chunk[3] // 16) * 10 + int(np_data_chunk[3] & 15)
+        minute      = int(np_data_chunk[4] // 16) * 10 + int(np_data_chunk[4] & 15)
+        second      = int(np_data_chunk[5] // 16) * 10 + int(np_data_chunk[5] & 15)
+        microsecond = 100000 * int(np_data_chunk[6])   # byte 6 is 100 ms units → microseconds
 
         t_fits[i] = datetime.datetime(year, month, day, hour, minute, second, microsecond)
 
